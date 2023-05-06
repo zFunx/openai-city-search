@@ -1,5 +1,4 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-
+import { getOpenAiCities } from "@/lib/openai-city-search";
 import firebase from "@/lib/init-firebase";
 import {
   collection,
@@ -16,6 +15,8 @@ const db = getFirestore(firebase);
 
 // Internal params
 const maxSuggesttion = 5;
+const exampleResponse = `['Partial match', 'Los Angeles in United States', 'Los Rios in Chile', 'Los Alamos in United States', 'Los Palacios y Villafranca in Spain', 'Los Santos in Panama'].`
+// const exampleResponse = `["Partial match"]`
 
 async function getSavedCitiesByPartialName(partialName) {
   const q = query(
@@ -44,6 +45,13 @@ async function getSavedCitiesByPartialName(partialName) {
   }
 
   return cities;
+}
+function removeTrailingPeriod(str) {
+  if (str.charAt(str.length - 1) === ".") {
+    return str.slice(0, -1);
+  } else {
+    return str;
+  }
 }
 
 export default async function handler(req, res) {
@@ -75,8 +83,17 @@ export default async function handler(req, res) {
     return res.status(200).json({ cities });
   } else {
     // If we get either zero saved cities or (between 1 and maxSuggestions)
-    // TODO
-    return res.status(200).json({ cities });
+    // TODO: try catch
+    // const openaiResponse = await getOpenAiCities({ query });
+    const openaiResponse = exampleResponse;
+    // console.log('example response', openaiResponse);
+    let cleanedResponse = openaiResponse.replace(/'/g, '"')
+    cleanedResponse = removeTrailingPeriod(cleanedResponse)
+    cleanedResponse = JSON.parse(cleanedResponse);
+    return res.status(200).json({
+      matchType: cleanedResponse[0],
+      cities: cleanedResponse.slice(1),
+    });
   }
 
   // Defaut response
