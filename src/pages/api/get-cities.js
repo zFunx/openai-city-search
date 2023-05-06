@@ -48,6 +48,20 @@ async function getSavedCitiesByPartialName(partialName) {
 
 export default async function handler(req, res) {
   const { query } = req.query;
+
+  // Validation
+  if (!query) {
+    return res.status(400).json({ message: "query is required" });
+  } else if (query.length < 3 || query.length > 20) {
+    return res
+      .status(400)
+      .json({ message: "Length of query should be between 3 to 20 letters" });
+  } else if (query.split(" ").length > 2) {
+    return res
+      .status(400)
+      .json({ message: "query should not exceeds 2 words long" });
+  }
+
   const cities = await getSavedCitiesByPartialName(query);
 
   if (
