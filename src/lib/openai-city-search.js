@@ -22,7 +22,7 @@ export async function getOpenAiCities({ query, numOfCities = 5 } = {}) {
           role: "system",
           content: `You suggest ${numOfCities} ${
             numOfCities > 1 ? "cities" : "city"
-          } along with their countries ${
+          } along with ${
             numOfCities > 1 ? "their full country names" : "its country name"
           }.`,
         },
@@ -46,7 +46,15 @@ export async function getOpenAiCities({ query, numOfCities = 5 } = {}) {
         { role: "user", content: query },
       ],
     });
-    console.log(completion.data);
+    // console.log(completion.data);
+    console.log(
+      "prompt",
+      `You suggest ${numOfCities} ${
+        numOfCities > 1 ? "cities" : "city"
+      } along with ${
+        numOfCities > 1 ? "their full country names" : "its country name"
+      }.`
+    );
 
     return completion.data.choices[0].message.content;
   } catch (error) {
