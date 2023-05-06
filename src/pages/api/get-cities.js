@@ -19,8 +19,8 @@ const db = getFirestore(firebase);
 
 // Internal params
 const maxSuggestions = 5;
-const openAIInterval = 2 * 60 * 60 * 1000; // call OpenAI API once per 2 hrs
-// const openAIInterval = 10 * 1000; // call OpenAI API once per 10 seconds
+// const openAIInterval = 2 * 60 * 60 * 1000; // call OpenAI API once per 2 hrs
+const openAIInterval = 10 * 1000; // call OpenAI API once per 10 seconds
 
 async function getSavedCitiesByPartialName(partialName) {
   const q = query(
@@ -130,7 +130,7 @@ export default async function handler(req, res) {
     if (await isRecentlyCalledOpenAi()) {
       if (0 == savedCities.length) {
         return res.status(200).json({
-          matchType: "No match",
+          matchType: "No match 1",
           cities: [],
         });
       } else {
