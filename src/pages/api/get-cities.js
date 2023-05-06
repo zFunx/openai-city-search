@@ -4,11 +4,13 @@ import {
   collection,
   doc,
   endAt,
+  getDoc,
   getDocs,
   getFirestore,
   limit,
   orderBy,
   query,
+  serverTimestamp,
   startAt,
   where,
   writeBatch,
@@ -17,6 +19,8 @@ const db = getFirestore(firebase);
 
 // Internal params
 const maxSuggestions = 5;
+const openAIInterval = 2 * 60 * 60 * 1000; // call OpenAI API once per 2 hrs
+// const openAIInterval = 10 * 1000; // call OpenAI API once per 10 seconds
 
 async function getSavedCitiesByPartialName(partialName) {
   const q = query(
@@ -38,7 +42,7 @@ async function getSavedCitiesByPartialName(partialName) {
       });
     });
   } catch (e) {
-    console.log(
+    console.error(
       "Somthing went wrong while searching for cities from Firbase",
       e
     );
@@ -64,6 +68,29 @@ function removeDuplicates(array) {
     }
   }
   return uniqueArray;
+}
+/**
+ * Checks if Open AI was called within the given limit of time
+ */
+async function isRecentlyCalledOpenAi() {
+  const docRef = doc(db, "logs", "last-suggestion-time");
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) {
+    return false;
+  } else {
+    const lastTimestamp = docSnap.data().last_fetched.toDate();
+    const currentTimestamp = new Date();
+
+    if (
+      Math.floor(currentTimestamp.getTime() - lastTimestamp.getTime()) >
+      openAIInterval
+    ) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 }
 
 export default async function handler(req, res) {
@@ -100,6 +127,20 @@ export default async function handler(req, res) {
       cities: formatSavedCities(savedCities),
     });
   } else {
+    if (await isRecentlyCalledOpenAi()) {
+      if (0 == savedCities.length) {
+        return res.status(200).json({
+          matchType: "No match",
+          cities: [],
+        });
+      } else {
+        return res.status(200).json({
+          matchType: "Partial match",
+          cities: formatSavedCities(savedCities),
+        });
+      }
+    }
+    
     // If we get either zero saved cities or (between 1 and maxSuggestions)
     try {
       const openaiResponse = await getOpenAiCities({
@@ -124,6 +165,12 @@ export default async function handler(req, res) {
             country,
             is_approved: true,
           });
+        });
+
+        // Store time when the suggestion was asked from open ai
+        const lastSuggestionTimeRef = doc(db, "logs", "last-suggestion-time");
+        batch.set(lastSuggestionTimeRef, {
+          last_fetched: serverTimestamp(),
         });
 
         // Commit the batch

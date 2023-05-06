@@ -46,19 +46,9 @@ export async function getOpenAiCities({ query, numOfCities = 5 } = {}) {
         { role: "user", content: query },
       ],
     });
-    // console.log(completion.data);
-    console.log(
-      "prompt",
-      `You suggest ${numOfCities} ${
-        numOfCities > 1 ? "cities" : "city"
-      } along with ${
-        numOfCities > 1 ? "their full country names" : "its country name"
-      }.`
-    );
 
     return completion.data.choices[0].message.content;
   } catch (error) {
-    // Consider adjusting the error handling logic for your use case
     if (error.response) {
       console.error(error.response.status, error.response.data);
     } else {
