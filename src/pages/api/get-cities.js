@@ -14,7 +14,7 @@ import {
 const db = getFirestore(firebase);
 
 // Internal params
-const maxSuggesttion = 5;
+const maxSuggestions = 5;
 const exampleResponse = `['Partial match', 'Los Angeles in United States', 'Los Rios in Chile', 'Los Alamos in United States', 'Los Palacios y Villafranca in Spain', 'Los Santos in Panama'].`;
 // const exampleResponse = `["Partial match"]`
 
@@ -25,7 +25,7 @@ async function getSavedCitiesByPartialName(partialName) {
     startAt(partialName.toLowerCase()),
     endAt(partialName.toLowerCase() + "\uf8ff"),
     where("is_approved", "==", true),
-    limit(maxSuggesttion)
+    limit(maxSuggestions)
   );
   const cities = [];
 
@@ -82,27 +82,45 @@ export default async function handler(req, res) {
     // If we get only one saved city
     return res
       .status(200)
-      .json({ matchType: "Exact match", cities: formatSavedCities(savedCities) });
-  } else if (maxSuggesttion == savedCities.length) {
+      .json({
+        matchType: "Exact match",
+        cities: formatSavedCities(savedCities),
+      });
+  } else if (maxSuggestions == savedCities.length) {
     // If we get all saved cities
     return res
       .status(200)
-      .json({ matchType: "Partial match", cities: formatSavedCities(savedCities) });
+      .json({
+        matchType: "Partial match",
+        cities: formatSavedCities(savedCities),
+      });
   } else {
     // If we get either zero saved cities or (between 1 and maxSuggestions)
     // TODO: try catch
-    // const openaiResponse = await getOpenAiCities({ query });
-    const openaiResponse = exampleResponse;
+    const openaiResponse = await getOpenAiCities({
+      query,
+      numOfCities: maxSuggestions - savedCities.length,
+    });
+    // const openaiResponse = exampleResponse;
     // console.log('example response', openaiResponse);
     let cleanedResponse = openaiResponse.replace(/'/g, '"');
     cleanedResponse = removeTrailingPeriod(cleanedResponse);
     cleanedResponse = JSON.parse(cleanedResponse);
-    return res.status(200).json({
-      matchType: 0 == savedCities.length ? cleanedResponse[0] : 'Partial match',
-      cities: [...cleanedResponse.slice(1), ...formatSavedCities(savedCities)],
-    });
-  }
 
-  // Defaut response
-  res.status(200).json({ cities: [] });
+    if (0 == savedCities.length && "No match" == cleanedResponse[0]) {
+      return res.status(200).json({
+        matchType: "No match",
+        cities: [],
+      });
+    } else {
+      return res.status(200).json({
+        matchType:
+          0 == savedCities.length ? cleanedResponse[0] : "Partial match",
+        cities: [
+          ...cleanedResponse.slice(1),
+          ...formatSavedCities(savedCities),
+        ],
+      });
+    }
+  }
 }

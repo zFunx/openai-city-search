@@ -23,7 +23,7 @@ export async function getOpenAiCities({ query, numOfCities = 5 } = {}) {
           content: `You suggest ${numOfCities} ${
             numOfCities > 1 ? "cities" : "city"
           } along with their countries ${
-            numOfCities > 1 ? "their countries" : "its country"
+            numOfCities > 1 ? "their full country names" : "its country name"
           }.`,
         },
         { role: "user", content: "mum" },
