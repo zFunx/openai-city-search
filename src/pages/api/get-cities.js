@@ -130,7 +130,7 @@ export default async function handler(req, res) {
     if (await isRecentlyCalledOpenAi()) {
       if (0 == savedCities.length) {
         return res.status(200).json({
-          matchType: "No match 1",
+          matchType: "No match",
           cities: [],
         });
       } else {
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
       }
     }
     
-    // If we get either zero saved cities or (between 1 and maxSuggestions)
+    // If we get between zero to maxSuggestions saved cities
     try {
       const openaiResponse = await getOpenAiCities({
         query,
