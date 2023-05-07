@@ -113,7 +113,7 @@ export default async function handler(req, res) {
 
   if (
     1 == savedCities.length &&
-    query.toLocaleLowerCase() == savedCities[0].name_lowercase
+    query.toLowerCase() == savedCities[0].name_lowercase
   ) {
     // If we get only one saved city
     return res.status(200).json({
@@ -157,7 +157,7 @@ export default async function handler(req, res) {
         const batch = writeBatch(db);
 
         cleanedResponse.slice(1).map((city) => {
-          const cityRef = doc(db, "cities", city.toLocaleLowerCase());
+          const cityRef = doc(db, "cities", city.toLowerCase());
           const [name, country] = city.split(" in "); // eg. New York in United States
           batch.set(cityRef, {
             name,
